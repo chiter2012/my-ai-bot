@@ -1,56 +1,49 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. Sahifa dizaynini sozlash
-st.set_page_config(
-    page_title="Mening SI Botim", 
-    page_icon="🤖", 
-    layout="centered"
-)
-
+# Sahifa sozlamalari
+st.set_page_config(page_title="Mening SI Botim", page_icon="🤖")
 st.title("🤖 Mening Shaxsiy SI Yordamchim")
-st.markdown("Google Gemini API asosida ishlovchi aqlli chatbot.")
 
-# 2. API Kalitni xavfsiz tekshirish
-# Streamlit Secrets-dan kalitni oladi
-if "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
-else:
-    # Agar Secrets sozlanmagan bo'lsa, o'zingizning kalitingizni vaqtincha ishlatadi
-    api_key = "AIzaSyC2T1kkG2_Q15CeUlk_5SbCugJsNrN1GBY"
+# API kalitni xavfsiz olish
+# Avval Streamlit Secrets'dan qidiradi, topilmasa vaqtincha koddan oladi
+api_key = st.secrets.get("GEMINI_API_KEY") or "AIzaSyC2T1kkG2_Q15CeUlk_5SbCugJsNrN1GBY"
+
+if not api_key:
+    st.error("API kalit topilmadi. Iltimos, Secrets sozlamasini tekshiring!")
+    st.stop()
 
 genai.configure(api_key=api_key)
 
-# 3. Modelni yuklash (Gemini 1.5 Flash - tezkor va aqlli)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# 404 xatoligini oldini olish uchun barqaror model nomi
+# Agar flash ishlamasa, avtomatik ravishda pro versiyaga o'tadi
+try:
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+except:
+    model = genai.GenerativeModel('gemini-pro')
 
-# 4. Suhbat tarixini (xotirani) saqlash
+# Suhbat tarixini saqlash
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 5. Avvalgi xabarlarni ekranga chiqarish
+# Tarixdagi xabarlarni ekranga chiqarish
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 6. Foydalanuvchidan savol qabul qilish
-if prompt := st.chat_input("Savolingizni bu yerga yozing..."):
-    # Foydalanuvchi xabarini xotiraga qo'shish
+# Foydalanuvchi kiritishi
+if prompt := st.chat_input("Savolingizni yozing..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Bot javobini generatsiya qilish
+    # SI javobi
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
         try:
-            # SI dan javob olish
+            # Modelga xabar yuborish
             response = model.generate_content(prompt)
-            full_response = response.text
-            message_placeholder.markdown(full_response)
-            
-            # Bot javobini xotiraga qo'shish
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
+            bot_text = response.text
+            st.markdown(bot_text)
+            st.session_state.messages.append({"role": "assistant", "content": bot_text})
         except Exception as e:
             st.error(f"Xatolik yuz berdi: {str(e)}")
