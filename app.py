@@ -5,12 +5,16 @@ import google.generativeai as genai
 st.set_page_config(page_title="Mening SI Botim", page_icon="🤖")
 st.title("🤖 Mening Shaxsiy SI Yordamchim")
 
-# API Kalitni xavfsiz olish
+# API Kalitni sozlash
 api_key = st.secrets.get("GEMINI_API_KEY") or "AIzaSyC2T1kkG2_Q15CeUlk_5SbCugJsNrN1GBY"
 genai.configure(api_key=api_key)
 
-# 404 xatoligini butunlay yo'q qilish uchun 'gemini-pro' ishlatamiz
-model = genai.GenerativeModel('gemini-pro')
+# 404 xatoligini to'liq yo'qotish uchun model nomini to'liq yozamiz
+# Agar gemini-pro topilmasa, gemini-1.5-flash-latest ni sinaymiz
+try:
+    model = genai.GenerativeModel('gemini-1.5-pro')
+except:
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 # Suhbat xotirasi
 if "messages" not in st.session_state:
